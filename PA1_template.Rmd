@@ -71,7 +71,7 @@ colnames(mean_steps_per_interval )[2] <- 'steps'
 
 As before, it is better to visualize this information with a plot instead of a raw data frame. In this example the 'ggplot2' package is utilized to show the mean number of steps taken per the interval in the day.
 ```{r}
-qplot(interval, steps, data=mean_steps_per_interval)
+qplot(interval, steps, data=mean_steps_per_interval, geom="line", xlab='Interval', ylab='Steps')
 ```
 
 The max number of steps per interval can be found on the graph at around roughly the 800 interval but it is best found with the max function.
@@ -104,7 +104,7 @@ colnames(mean_steps_per_date)[2] <- 'steps'
 ```
 Now that we have the mean step value for every day lets plot the data to get a feel for what it looks like.
 ```{r}
-qplot(date, steps, data=mean_steps_per_date)
+qplot(date, steps, data=mean_steps_per_date, xlab='Date', ylab='Steps')
 ```
   
 The final step is to iterate over the new data frame created and if the step value is NA to find the mean value for this day and insert it into the step value.
@@ -143,31 +143,37 @@ median(total_steps_per_day$steps)
 <br />
 
 ### Are there differences in activity patterns between weekdays and weekends?
+Finally, we are going to compare the difference between weekdays and weekends. We start this analysis by computing the day of the week that the date maps to. After we know the day of the week we add another column that will define the sample as occcuring either on a weekday or a weekend. Once this is done the day type variable is cast as a factor for later use.
 ```{r}
 filtered_data$day <- weekdays(filtered_data$date)
 filtered_data$day_type <- ifelse(filtered_data$day == 'Saturday', 'weekend',
                                  ifelse(filtered_data$day =='Sunday', 'weekend', 'weekday'))
 filtered_data$day_type <- factor(filtered_data$day_type)
-
+```
+Once the date is classified we split the data into two data sets based upon the day type.
+```{r}
 split_data <- split(filtered_data, filtered_data$day_type)
 weekday_data <- split_data$weekday
 weekend_data <- split_data$weekend
-
+```
+For the weekdays we calculate the mean number of steps per interval using the mean and aggregate functions. Once that is done the columns are renamed to something more readable. Finally, to finish this data frame a new column is added defining this data as a weekday.
+```{r}
 mean_weekday_steps_per_interval <- aggregate(weekday_data$steps ~ weekday_data$interval, weekday_data, mean)
 colnames(mean_weekday_steps_per_interval)[1] <- 'interval'
 colnames(mean_weekday_steps_per_interval)[2] <- 'steps'
 mean_weekday_steps_per_interval$day_type <- 'weekday'
-weekday_plot <- xyplot(steps ~ interval, data = mean_weekday_steps_per_interval)
-
+```
+The same thing that is done for the weekdays is done for the weekends.
+```{r}
 mean_weekend_steps_per_interval <- aggregate(weekend_data$steps ~ weekend_data$interval, weekend_data, mean)
 colnames(mean_weekend_steps_per_interval)[1] <- 'interval'
 colnames(mean_weekend_steps_per_interval)[2] <- 'steps'
 mean_weekend_steps_per_interval$day_type <- 'weekend'
-weekend_plot <- xyplot(steps ~ interval, data = mean_weekend_steps_per_interval)
-mean_weekend_steps_per_interval
-
+```
+Because we split up our data, we need to append the rows in the data frames so that we have one final data frame. From this final data frame we use the lattice plotting system to plot two graphs based upon the day type. From the graphs you can see a noticable difference between step activity on weekdays and weekends. On weekdays, the steps occur throughout the day. On weekends, a considerably larger amount of steps occur earlier in the interval. If the intervals correspond with time of day it could be surmised that on weekends there is considerable walking occuring in the morning followed by more inactivity in the afternoon and evening.
+```{r}
 merged_data <- rbind(mean_weekday_steps_per_interval, mean_weekend_steps_per_interval)
-xyplot(merged_data$steps ~ merged_data$interval | merged_data$day_type, layout = c(1, 2))
+xyplot(merged_data$steps ~ merged_data$interval | merged_data$day_type, layout = c(1, 2), type='l', xlab='Interval', ylab="Steps")
 ```
 
 
